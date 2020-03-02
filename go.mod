@@ -1,5 +1,5 @@
-module github.com/recursive-deep-hash
+module github.com/panospet/recursive-deep-hash
 
 go 1.13
 
-require github.com/stretchr/testify v1.4.0
+require github.com/stretchr/testify v1.5.1
