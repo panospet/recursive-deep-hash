@@ -20,7 +20,13 @@ func ConstructHash(input interface{}) (ans string, err error) {
 
 
 func IterateAndDigestHash(input interface{}, digester *hash.Hash) (err error) {
-	//vName := reflect.TypeOf(input).String() // to get variable name (for debug reasons)
+	if input == nil {
+		_, err = fmt.Fprint(*digester, reflect.ValueOf(nil))
+		if err != nil {
+			return err
+		}
+		return
+	}
 
 	fieldValue := reflect.Indirect(reflect.ValueOf(input))
 	fieldKind := fieldValue.Type().Kind()
