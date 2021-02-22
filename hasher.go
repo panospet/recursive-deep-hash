@@ -68,14 +68,13 @@ func IterateAndDigestHash(input interface{}, digester *hash.Hash) (err error) {
 			if fv.IsZero() || !fv.IsValid() || fieldTag == "ignore" {
 				continue
 			}
-			var valOf interface{}
 			// check if field of struct is unexported
 			if reflect.Indirect(fv).CanInterface() {
-				valOf = reflect.Indirect(fv).Interface()
-			}
-			err = IterateAndDigestHash(valOf, digester)
-			if err != nil {
-				return
+				valOf := reflect.Indirect(fv).Interface()
+				err = IterateAndDigestHash(valOf, digester)
+				if err != nil {
+					return
+				}
 			}
 		}
 	case reflect.Slice, reflect.Array:
