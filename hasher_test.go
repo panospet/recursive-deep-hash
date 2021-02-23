@@ -179,8 +179,33 @@ func (s *ExampleTestSuite) TestForPointerToStruct() {
 
 func (s *ExampleTestSuite) TestTime() {
 	t := time.Now().Add(-5 * time.Hour)
-	_, err := ConstructHash(t)
+	h1, err := ConstructHash(t)
 	assert.Nil(s.T(), err)
+	t2 := time.Now().Add(-15 * time.Hour)
+	h2, err := ConstructHash(t2)
+	assert.Nil(s.T(), err)
+	assert.NotEqual(s.T(), h1, h2)
+}
+
+type A struct {
+	Exported   string
+	unexported string
+}
+
+func (s *ExampleTestSuite) TestUnexportedField() {
+	a := A{
+		Exported:   "1",
+		unexported: "aaaaaaaaaaaa",
+	}
+	h1, err := ConstructHash(a)
+	assert.Nil(s.T(), err)
+	b := A{
+		Exported:   "1",
+		unexported: "bbbbbbbbbbbbbbbb",
+	}
+	h2, err := ConstructHash(b)
+	assert.Nil(s.T(), err)
+	assert.Equal(s.T(), h1, h2)
 }
 
 func TestExampleTestSuite(t *testing.T) {

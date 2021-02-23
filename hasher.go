@@ -7,6 +7,7 @@ import (
 	"hash"
 	"reflect"
 	"sort"
+	"time"
 )
 
 func ConstructHash(input interface{}) (ans string, err error) {
@@ -18,7 +19,6 @@ func ConstructHash(input interface{}) (ans string, err error) {
 	return hex.EncodeToString(digester.Sum(nil)), nil
 }
 
-
 func IterateAndDigestHash(input interface{}, digester *hash.Hash) (err error) {
 	if input == nil {
 		_, err = fmt.Fprint(*digester, reflect.ValueOf(nil))
@@ -26,6 +26,14 @@ func IterateAndDigestHash(input interface{}, digester *hash.Hash) (err error) {
 			return err
 		}
 		return
+	}
+
+	// hash if time.Time
+	if t, ok := input.(time.Time); ok {
+		tStr := t.Format(time.RFC3339)
+		if err := IterateAndDigestHash(tStr, digester); err != nil {
+			return err
+		}
 	}
 
 	fieldValue := reflect.Indirect(reflect.ValueOf(input))
@@ -68,13 +76,15 @@ func IterateAndDigestHash(input interface{}, digester *hash.Hash) (err error) {
 			if fv.IsZero() || !fv.IsValid() || fieldTag == "ignore" {
 				continue
 			}
+			var valOf interface{}
 			// check if field of struct is unexported
 			if reflect.Indirect(fv).CanInterface() {
-				valOf := reflect.Indirect(fv).Interface()
-				err = IterateAndDigestHash(valOf, digester)
-				if err != nil {
-					return
-				}
+				valOf = reflect.Indirect(fv).Interface()
+			} else {
+				return
+			}
+			if err = IterateAndDigestHash(valOf, digester); err != nil {
+				return
 			}
 		}
 	case reflect.Slice, reflect.Array:
@@ -90,10 +100,12 @@ func IterateAndDigestHash(input interface{}, digester *hash.Hash) (err error) {
 		sort.Strings(hashesAr)
 		for _, h := range hashesAr {
 			err = IterateAndDigestHash(h, digester)
+			if err != nil {
+				return err
+			}
 		}
 	default:
-		_, err = fmt.Fprint(*digester, reflect.ValueOf(fieldValue).Interface())
-		if err != nil {
+		if _, err = fmt.Fprint(*digester, reflect.ValueOf(fieldValue).Interface()); err != nil {
 			return
 		}
 	}
